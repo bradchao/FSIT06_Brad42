@@ -182,7 +182,9 @@ public class MainActivity extends AppCompatActivity {
         mClient.notify(mac, serviceUUID, characterUUID, new BleNotifyResponse() {
             @Override
             public void onNotify(UUID service, UUID character, byte[] value) {
-                Log.v("brad", "i got it");
+                for (int v : value){
+                    Log.v("brad", "==> " + v);
+                }
             }
 
             @Override

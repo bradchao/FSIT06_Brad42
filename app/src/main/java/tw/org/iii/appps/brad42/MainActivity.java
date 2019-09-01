@@ -120,6 +120,11 @@ public class MainActivity extends AppCompatActivity {
                 String name = device.getName();
                 int rssi = device.rssi;
                 Log.v("brad", name + ":" + mac + ":" + rssi);
+
+                if (name.equals("Brad Redmi")){
+                    MainActivity.this.mac = mac;
+                }
+
             }
 
             @Override

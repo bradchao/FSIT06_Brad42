@@ -13,26 +13,51 @@ import android.view.View;
 
 import com.inuker.bluetooth.library.BluetoothClient;
 import com.inuker.bluetooth.library.beacon.Beacon;
+import com.inuker.bluetooth.library.connect.listener.BleConnectStatusListener;
 import com.inuker.bluetooth.library.connect.listener.BluetoothStateListener;
+import com.inuker.bluetooth.library.connect.options.BleConnectOptions;
+import com.inuker.bluetooth.library.connect.response.BleConnectResponse;
+import com.inuker.bluetooth.library.connect.response.BleNotifyResponse;
+import com.inuker.bluetooth.library.model.BleGattProfile;
 import com.inuker.bluetooth.library.search.SearchRequest;
 import com.inuker.bluetooth.library.search.SearchResult;
 import com.inuker.bluetooth.library.search.response.SearchResponse;
 import com.inuker.bluetooth.library.utils.BluetoothLog;
 
+import java.util.UUID;
+
+import static com.inuker.bluetooth.library.Constants.REQUEST_SUCCESS;
+import static com.inuker.bluetooth.library.Constants.STATUS_CONNECTED;
+import static com.inuker.bluetooth.library.Constants.STATUS_DISCONNECTED;
+
 public class MainActivity extends AppCompatActivity {
     private BluetoothClient mClient;
+    private String mac = "73:5D:5F:16:06:69";
 
     private final BluetoothStateListener mBluetoothStateListener = new BluetoothStateListener() {
         @Override
         public void onBluetoothStateChanged(boolean openOrClosed) {
             if (openOrClosed){
-                Log.v("brad", "BLE On");
+                Log.v("brad", "ble open");
             }else{
-                Log.v("brad", "BLE Off");
+                Log.v("brad", "ble close");
             }
         }
 
     };
+
+    private final BleConnectStatusListener mBleConnectStatusListener =
+            new BleConnectStatusListener() {
+        @Override
+        public void onConnectStatusChanged(String mac, int status) {
+            if (status == STATUS_CONNECTED) {
+                Log.v("brad", "connect OK");
+            } else if (status == STATUS_DISCONNECTED) {
+                Log.v("brad", "disconnect");
+            }
+        }
+    };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -120,4 +145,52 @@ public class MainActivity extends AppCompatActivity {
         super.finish();
     }
 
+    public void test5(View view) {
+        //73:5D:5F:16:06:69
+        mClient.registerConnectStatusListener(
+                mac, mBleConnectStatusListener);
+
+        BleConnectOptions options = new BleConnectOptions.Builder()
+                .setConnectRetry(3)   // 连接如果失败重试3次
+                .setConnectTimeout(30000)   // 连接超时30s
+                .setServiceDiscoverRetry(3)  // 发现服务如果失败重试3次
+                .setServiceDiscoverTimeout(20000)  // 发现服务超时20s
+                .build();
+
+        mClient.connect(mac, options, new BleConnectResponse() {
+            @Override
+            public void onResponse(int code, BleGattProfile data) {
+                Log.v("brad", "connect response");
+            }
+        });
+    }
+
+    public void test6(View view) {
+        mClient.disconnect(mac);
+    }
+
+    public void test7(View view) {
+        // serviceUUID: 0000180f-0000-1000-8000-00805f9b34fb
+        // characterUUID: 00002a19-0000-1000-8000-00805f9b34fb
+
+        String sUUID = "0000180f-0000-1000-8000-00805f9b34fb";
+        String cUUID = "00002a19-0000-1000-8000-00805f9b34fb";
+
+        UUID serviceUUID = UUID.fromString(sUUID);
+        UUID characterUUID = UUID.fromString(cUUID);
+
+        mClient.notify(mac, serviceUUID, characterUUID, new BleNotifyResponse() {
+            @Override
+            public void onNotify(UUID service, UUID character, byte[] value) {
+                Log.v("brad", "i got it");
+            }
+
+            @Override
+            public void onResponse(int code) {
+                if (code == REQUEST_SUCCESS) {
+                    Log.v("brad", "response success");
+                }
+            }
+        });
+    }
 }
